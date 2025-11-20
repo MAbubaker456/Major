@@ -4,6 +4,10 @@ import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ShaderAnimation } from '@/components/ShaderAnimation';
+import Hero from "@/components/Hero";
+
+
 
 // Lazy load sections below the fold for better performance
 const FeaturesSection = dynamic(() => Promise.resolve(FeaturesComponent), { ssr: false });
@@ -37,68 +41,41 @@ const staggerChildren = {
     }
   }
 };
-
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Pure black background with subtle purple accents */}
-      <div className="absolute inset-0 bg-black" />
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-purple-800/5" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(139,92,246,0.08),transparent_70%)]" />
-      
-      <div className="container relative z-10 px-4 mx-auto">
-        <motion.div 
-          className="text-center max-w-4xl mx-auto"
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
-        >
-          <motion.h1 
-            className="text-5xl md:text-7xl font-bold mb-6"
-            variants={fadeInUp}
-          >
-            AI-Powered{' '}
-            <span className="gradient-text">Red Team Testing</span>
-          </motion.h1>
-          
-          <motion.p 
-            className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            variants={fadeInUp}
-          >
-            CognitoForge simulates intelligent adversarial attacks on your code and CI/CD pipelines 
-            before real hackers do. Get proactive security insights with AI-driven vulnerability testing.
-          </motion.p>
-          
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
-            variants={fadeInUp}
-          >
-            <Link href="/demo">
-              <Button variant="purple" size="lg" className="text-lg px-8 hover-lift">
-                <Zap className="mr-2 h-5 w-5" />
-                Get Started Free
-              </Button>
-            </Link>
-            
-            <Link href="#features">
-              <Button variant="purple-outline" size="lg" className="text-lg px-8 hover-lift">
-                Learn More
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </motion.div>
-        </motion.div>
-      </div>
-      
-      {/* Optimized animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400/15 rounded-full blur-3xl animate-float" />
-        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-purple-600/10 rounded-full blur-2xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
-      </div>
+    <section className="relative min-h-screen overflow-hidden">
+      <Hero
+        headline={{
+          line1: "AI-Powered",
+          line2: "Red Team Testing",
+        }}
+        subtitle="CognitoForge simulates intelligent adversarial attacks on your code and CI/CD pipelines before real hackers do. Get proactive security insights with AI-driven vulnerability testing."
+        trustBadge={{
+          text: "Security-first teams love CognitoForge",
+          icons: ["★", "★", "★"],
+        }}
+        buttons={{
+          primary: {
+            text: "Get Started Free",
+            onClick: () => {
+              // same as your old primary button
+              window.location.href = "/demo";
+            },
+          },
+          secondary: {
+            text: "Learn More",
+            onClick: () => {
+              const el = document.getElementById("features");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            },
+          },
+        }}
+      />
     </section>
   );
 }
+
+
 
 function FeaturesComponent() {
   const features = [
