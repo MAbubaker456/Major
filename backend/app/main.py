@@ -12,6 +12,7 @@ from backend.app.integrations.supabase_service import init_snowflake
 from backend.app.routers import ai, operations, performance
 from backend.app.services.gradient_service import init_gradient, run_gradient_task
 import os
+from backend.app.routers import code_assist
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(operations.router)
 app.include_router(ai.router)
 app.include_router(performance.router) 
+app.include_router(code_assist.router)
 
 
 @app.on_event("startup")
