@@ -12,10 +12,10 @@ from backend.app.services.code_assist.improved_query_service import ask_question
 router = APIRouter(prefix="/code-assist", tags=["Code Assist"])
 
 
-class IndexRequest(BaseModel):
-    """Request to index a repository."""
-    repo_id: str
-    repo_path: str  # Path to repository on disk
+# class IndexRequest(BaseModel):
+#     """Request to index a repository."""
+#     repo_id: str
+#     repo_path: str  # Path to repository on disk
 
 
 class QueryRequest(BaseModel):
@@ -25,7 +25,7 @@ class QueryRequest(BaseModel):
 
 
 @router.post("/index/{repo_id}")
-def index_repo(request: IndexRequest):
+def index_repo(repo_id: str):
     """
     Index a repository for semantic code search.
     
@@ -44,11 +44,23 @@ def index_repo(request: IndexRequest):
     ```
     """
     try:
+        repo_path = Path("data/repos") / repo_id
+
+        if not repo_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Repository '{repo_id}' not found in data/repos"
+            )
+
         result = ingest_repository_from_path(
-            request.repo_id,
-            request.repo_path
+            repo_id,
+            str(repo_path)
         )
+
         return result
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -113,3 +125,37 @@ def get_repo_stats(repo_id: str):
         return stats
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"No index found for {repo_id}")
+    
+
+@router.get("/projects")
+def list_indexed_projects():
+    """
+    Return all repositories that already have a vector index.
+    This allows users to directly ask questions without re-indexing.
+    """
+
+    try:
+        vector_index_dir = Path("data/vector_index")
+
+        if not vector_index_dir.exists():
+            return {
+                "count": 0,
+                "projects": []
+            }
+
+        projects = []
+
+        for repo_dir in vector_index_dir.iterdir():
+            if repo_dir.is_dir():
+                projects.append({
+                    "repo_id": repo_dir.name,
+                    "indexed": True
+                })
+
+        return {
+            "count": len(projects),
+            "projects": projects
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
