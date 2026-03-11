@@ -392,6 +392,208 @@ def fetch_performance_run(run_id: str):
         return None
     
 
+def _parse_timestamp_from_run_id(run_id: str) -> Optional[str]:
+    """
+    Extract the ISO timestamp embedded in run_ids like
+    'NodeGoat_20260117T142921436766'  →  '2026-01-17T14:29:21'
+    Returns None if the run_id doesn't match the expected pattern.
+    """
+    import re
+    match = re.search(r"_(\d{8}T\d{6})", run_id)
+    if not match:
+        return None
+    raw = match.group(1)  # e.g. "20260117T142921"
+    try:
+        from datetime import datetime
+        dt = datetime.strptime(raw, "%Y%m%dT%H%M%S")
+        return dt.isoformat()
+    except ValueError:
+        return None
+
+
+def fetch_dashboard_metrics() -> Dict[str, Any]:
+    """
+    Return all KPIs needed by the Security Dashboard.
+
+    Sources data from affected_files + ai_insights because simulation_runs
+    may not always be populated (data flows through affected_files first).
+
+    Returned shape:
+    {
+        "repos_analyzed":             int,
+        "total_scans":                int,
+        "total_vulnerabilities":      int,
+        "vulnerability_distribution": {"critical": int, "high": int, "medium": int, "low": int},
+        "avg_risk_score":             float,   # 0–10
+        "gemini_scans":               int,
+        "fallback_scans":             int,
+        "last_scan":                  str | None,  # ISO-8601
+    }
+    """
+    conn = _get_conn()
+    severity_weights = {"critical": 9.5, "high": 8.5, "medium": 6.0, "low": 3.0}
+
+    with conn.cursor() as cur:
+        # ── repos & scans ────────────────────────────────────────────────────
+        cur.execute(
+            """
+            SELECT
+                COUNT(DISTINCT repo_id)  AS repos_analyzed,
+                COUNT(DISTINCT run_id)   AS total_scans,
+                COUNT(*)                 AS total_vulnerabilities
+            FROM affected_files
+            """
+        )
+        row = cur.fetchone()
+        repos_analyzed: int      = int(row[0] or 0)
+        total_scans: int         = int(row[1] or 0)
+        total_vulnerabilities: int = int(row[2] or 0)
+
+        # ── vulnerability distribution ────────────────────────────────────────
+        cur.execute(
+            """
+            SELECT LOWER(COALESCE(severity, 'unknown')), COUNT(*)
+            FROM affected_files
+            GROUP BY 1
+            """
+        )
+        vuln_dist: Dict[str, int] = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+        for sev, cnt in cur.fetchall():
+            if sev in vuln_dist:
+                vuln_dist[sev] = int(cnt)
+
+        # ── avg risk score: dominant severity per run → averaged ──────────────
+        # For each run pick the most frequent severity label, map to score.
+        cur.execute(
+            """
+            SELECT
+                run_id,
+                LOWER(COALESCE(severity, 'unknown')) AS sev,
+                COUNT(*)                              AS cnt
+            FROM affected_files
+            GROUP BY run_id, sev
+            """
+        )
+        run_sev_counts: Dict[str, Dict[str, int]] = {}
+        for run_id, sev, cnt in cur.fetchall():
+            run_sev_counts.setdefault(run_id, {})[sev] = int(cnt)
+
+        run_scores = []
+        for sev_counts in run_sev_counts.values():
+            dominant = max(sev_counts, key=lambda s: sev_counts[s])
+            run_scores.append(severity_weights.get(dominant, 5.0))
+        avg_risk_score = round(sum(run_scores) / len(run_scores), 1) if run_scores else 0.0
+
+        # ── gemini vs fallback ────────────────────────────────────────────────
+        # A run is "Gemini" when it has an ai_insights row whose insight text
+        # is not the fallback sentinel "Gemini unavailable".
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT run_id)
+            FROM ai_insights
+            WHERE LOWER(COALESCE(insight, '')) NOT IN ('gemini unavailable', '')
+            """
+        )
+        gemini_scans: int  = int(cur.fetchone()[0] or 0)
+        fallback_scans: int = max(0, total_scans - gemini_scans)
+
+        # ── last scan timestamp parsed from run_id ────────────────────────────
+        cur.execute(
+            """
+            SELECT run_id
+            FROM affected_files
+            ORDER BY run_id DESC
+            LIMIT 1
+            """
+        )
+        last_row = cur.fetchone()
+        last_scan: Optional[str] = (
+            _parse_timestamp_from_run_id(last_row[0]) if last_row else None
+        )
+
+        # Fall back to simulation_runs.created_at if run_id parse failed
+        if not last_scan:
+            try:
+                cur.execute("SELECT MAX(created_at) FROM simulation_runs")
+                ts_row = cur.fetchone()
+                if ts_row and ts_row[0]:
+                    last_scan = ts_row[0].isoformat()
+            except Exception:
+                pass
+
+    return {
+        "repos_analyzed":             repos_analyzed,
+        "total_scans":                total_scans,
+        "total_vulnerabilities":      total_vulnerabilities,
+        "vulnerability_distribution": vuln_dist,
+        "avg_risk_score":             avg_risk_score,
+        "gemini_scans":               gemini_scans,
+        "fallback_scans":             fallback_scans,
+        "last_scan":                  last_scan,
+    }
+
+
+def fetch_recent_simulations(limit: int = 5) -> list:
+    """
+    Return the *limit* most recent simulation runs sourced from affected_files
+    + ai_insights (simulation_runs is optional enrichment only).
+
+    Each item shape:
+    {
+        "run_id":            str,
+        "repo_id":           str,
+        "overall_severity":  str,
+        "timestamp":         str | None,
+        "total_steps":       int,
+        "plan_source":       "gemini" | "fallback",
+        "ai_insight":        str | None,
+    }
+    """
+    conn = _get_conn()
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                af.run_id,
+                af.repo_id,
+                COUNT(*)                                        AS attack_vectors,
+                MODE() WITHIN GROUP (ORDER BY LOWER(COALESCE(af.severity, 'unknown')))
+                                                                AS dominant_severity,
+                MIN(
+                    CASE
+                        WHEN LOWER(COALESCE(ai.insight, '')) NOT IN ('gemini unavailable', '')
+                        THEN ai.insight
+                    END
+                )                                               AS insight,
+                SUBSTRING(af.run_id FROM '_([0-9]{8}T[0-9]{6})')  AS run_ts
+            FROM affected_files af
+            LEFT JOIN ai_insights ai
+                   ON ai.run_id  = af.run_id
+                  AND ai.repo_id = af.repo_id
+            GROUP BY af.run_id, af.repo_id
+            ORDER BY run_ts DESC NULLS LAST, af.run_id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        rows = cur.fetchall()
+
+    result = []
+    for run_id, repo_id, attack_vectors, dominant_severity, insight, _run_ts in rows:
+        result.append(
+            {
+                "run_id":           run_id,
+                "repo_id":          repo_id,
+                "overall_severity": (dominant_severity or "unknown").lower(),
+                "timestamp":        _parse_timestamp_from_run_id(run_id),
+                "total_steps":      int(attack_vectors or 0),
+                "plan_source":      "gemini" if insight else "fallback",
+                "ai_insight":       insight,
+            }
+        )
+    return result
+
+
 __all__ = [
     "init_snowflake",
     "store_simulation_run",
@@ -402,4 +604,7 @@ __all__ = [
     "fetch_severity_summary",
     "store_performance_run",
     "fetch_performance_run",
+    # Dashboard
+    "fetch_dashboard_metrics",
+    "fetch_recent_simulations",
 ]

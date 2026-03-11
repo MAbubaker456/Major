@@ -772,3 +772,84 @@ async def get_gradient_status() -> dict[str, object]:
                 "message": "Gradient service unavailable"
             }
         }
+
+
+# ==============================================================================
+# Dashboard endpoints — all metrics sourced from the database
+# ==============================================================================
+
+
+@router.get("/api/dashboard/metrics")
+async def get_dashboard_metrics() -> dict[str, object]:
+    """
+    Return aggregated Security Dashboard KPIs pulled directly from the database.
+
+    Response shape:
+    {
+        "success": true,
+        "data": {
+            "repos_analyzed":          int,
+            "total_scans":             int,
+            "total_vulnerabilities":   int,
+            "vulnerability_distribution": {"critical": int, "high": int, "medium": int, "low": int},
+            "avg_risk_score":          float,
+            "gemini_scans":            int,
+            "fallback_scans":          int,
+            "last_scan":               str | null
+        }
+    }
+    """
+    logger.info("/api/dashboard/metrics request received")
+    try:
+        metrics = await run_in_threadpool(snowflake_integration.fetch_dashboard_metrics)
+        logger.info("/api/dashboard/metrics success", extra={"metrics": metrics})
+        return {"success": True, "data": metrics}
+    except Exception as exc:
+        logger.exception("Unexpected error fetching dashboard metrics")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Failed to fetch dashboard metrics"},
+        ) from exc
+
+
+@router.get("/api/dashboard/recent-simulations")
+async def get_recent_simulations(limit: int = 5) -> dict[str, object]:
+    """
+    Return the most recent simulation runs for the dashboard's Recent Simulations panel.
+
+    Query param:
+        limit (int, default 5) — how many rows to return
+
+    Response shape:
+    {
+        "success": true,
+        "data": [
+            {
+                "run_id":           str,
+                "repo_id":          str,
+                "overall_severity": str,
+                "timestamp":        str | null,
+                "total_steps":      int,
+                "plan_source":      "gemini" | "fallback",
+                "ai_insight":       str | null
+            },
+            ...
+        ]
+    }
+    """
+    logger.info("/api/dashboard/recent-simulations request received", extra={"limit": limit})
+    try:
+        simulations = await run_in_threadpool(
+            snowflake_integration.fetch_recent_simulations, limit
+        )
+        logger.info(
+            "/api/dashboard/recent-simulations success",
+            extra={"count": len(simulations)},
+        )
+        return {"success": True, "data": simulations}
+    except Exception as exc:
+        logger.exception("Unexpected error fetching recent simulations")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Failed to fetch recent simulations"},
+        ) from exc

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Shield,
   GitBranch,
@@ -18,12 +18,16 @@ import {
   Zap,
   Database,
   Server,
-  Cloud
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/toast';
-import Link from 'next/link';
-import { getAllSimulations, getAnalyticsSummary, getGradientStatus, type GradientStatus, type SnowflakeSeveritySummary } from '@/lib/api';
+  Cloud,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
+import Link from "next/link";
+import {
+  getGradientStatus,
+  type GradientStatus,
+  type SnowflakeSeveritySummary,
+} from "@/lib/api";
 
 interface DashboardStats {
   totalRepositories: number;
@@ -45,15 +49,20 @@ interface RecentSimulation {
   timestamp: string;
   overall_severity: string;
   total_steps: number;
-  plan_source: 'gemini' | 'fallback' | 'legacy';
+  plan_source: "gemini" | "fallback" | "legacy";
   ai_insight?: string;
 }
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentSimulations, setRecentSimulations] = useState<RecentSimulation[]>([]);
-  const [snowflakeSummary, setSnowflakeSummary] = useState<SnowflakeSeveritySummary | null>(null);
-  const [gradientStatus, setGradientStatus] = useState<GradientStatus | null>(null);
+  const [recentSimulations, setRecentSimulations] = useState<
+    RecentSimulation[]
+  >([]);
+  const [snowflakeSummary, setSnowflakeSummary] =
+    useState<SnowflakeSeveritySummary | null>(null);
+  const [gradientStatus, setGradientStatus] = useState<GradientStatus | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { showSuccess, showError } = useToast();
@@ -61,122 +70,63 @@ export function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setIsRefreshing(true);
-      
-      // Fetch all simulation files from backend using API service
-      const simulationsResponse = await getAllSimulations();
 
-      if (!simulationsResponse.success || !simulationsResponse.data) {
-        throw new Error('Failed to fetch dashboard data');
+      // Fetch all dashboard KPIs and recent simulations in parallel from DB
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+      const [metricsRes, recentsRes, gradientRes] = await Promise.all([
+        fetch(`${API_BASE}/api/dashboard/metrics`),
+        fetch(`${API_BASE}/api/dashboard/recent-simulations?limit=5`),
+        getGradientStatus(),
+      ]);
+
+      if (!metricsRes.ok || !recentsRes.ok) {
+        throw new Error("Failed to fetch dashboard data from database");
       }
 
-      const data = simulationsResponse.data;
-      
-      // Process data to calculate stats
-      const simulations = data.simulations || [];
-      
-      // Calculate statistics
-      const statsData: DashboardStats = {
-        totalRepositories: new Set(simulations.map((s: any) => s.repo_id)).size,
-        totalSimulations: simulations.length,
-        totalVulnerabilities: 0,
-        criticalVulnerabilities: 0,
-        highVulnerabilities: 0,
-        mediumVulnerabilities: 0,
-        lowVulnerabilities: 0,
-        averageRiskScore: 0,
-        lastSimulation: null,
-        aiPoweredScans: 0,
-        fallbackScans: 0
-      };
+      const metricsJson = await metricsRes.json();
+      const recentsJson = await recentsRes.json();
 
-      let totalRiskScore = 0;
+      if (!metricsJson.success || !recentsJson.success) {
+        throw new Error("API returned an error response");
+      }
 
-      simulations.forEach((sim: any) => {
-        // Count vulnerabilities by severity
-        if (sim.plan?.steps) {
-          sim.plan.steps.forEach((step: any) => {
-            statsData.totalVulnerabilities++;
-            switch (step.severity?.toLowerCase()) {
-              case 'critical':
-                statsData.criticalVulnerabilities++;
-                break;
-              case 'high':
-                statsData.highVulnerabilities++;
-                break;
-              case 'medium':
-                statsData.mediumVulnerabilities++;
-                break;
-              case 'low':
-                statsData.lowVulnerabilities++;
-                break;
-            }
-          });
-        }
+      const m = metricsJson.data;
+      const dist = m.vulnerability_distribution ?? {};
 
-        // Calculate risk score
-        const severity = sim.plan?.overall_severity?.toLowerCase();
-        const riskScores: any = {
-          'critical': 9.5,
-          'high': 8.5,
-          'medium': 6.0,
-          'low': 3.0
-        };
-        totalRiskScore += riskScores[severity] || 5.0;
-
-        // Count AI vs fallback
-        if (sim.gemini_metadata?.plan_source === 'gemini') {
-          statsData.aiPoweredScans++;
-        } else {
-          statsData.fallbackScans++;
-        }
-
-        // Track last simulation
-        if (!statsData.lastSimulation || sim.timestamp > statsData.lastSimulation) {
-          statsData.lastSimulation = sim.timestamp;
-        }
+      setStats({
+        totalRepositories: m.repos_analyzed ?? 0,
+        totalSimulations: m.total_scans ?? 0,
+        totalVulnerabilities: m.total_vulnerabilities ?? 0,
+        criticalVulnerabilities: dist.critical ?? 0,
+        highVulnerabilities: dist.high ?? 0,
+        mediumVulnerabilities: dist.medium ?? 0,
+        lowVulnerabilities: dist.low ?? 0,
+        averageRiskScore: m.avg_risk_score ?? 0,
+        lastSimulation: m.last_scan ?? null,
+        aiPoweredScans: m.gemini_scans ?? 0,
+        fallbackScans: m.fallback_scans ?? 0,
       });
 
-      statsData.averageRiskScore = simulations.length > 0 
-        ? Math.round((totalRiskScore / simulations.length) * 10) / 10
-        : 0;
+      // Recent simulations are already shaped correctly by the backend
+      setRecentSimulations(recentsJson.data ?? []);
 
-      // Get recent simulations (last 5)
-      const recent = simulations
-        .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 5)
-        .map((sim: any) => ({
-          repo_id: sim.repo_id,
-          run_id: sim.run_id,
-          timestamp: sim.timestamp,
-          overall_severity: sim.plan?.overall_severity || 'unknown',
-          total_steps: sim.plan?.steps?.length || 0,
-          plan_source: sim.gemini_metadata?.plan_source || 'legacy',
-          ai_insight: sim.gemini_metadata?.ai_insight
-        }));
-
-      setStats(statsData);
-      setRecentSimulations(recent);
-
-      // Fetch Snowflake analytics summary (parallel with simulations)
-      const snowflakeResponse = await getAnalyticsSummary();
-      if (snowflakeResponse.success && snowflakeResponse.data) {
-        setSnowflakeSummary(snowflakeResponse.data);
+      // Gradient status (unchanged)
+      if (gradientRes.success && gradientRes.data) {
+        setGradientStatus(gradientRes.data.status);
       }
 
-      // Fetch Gradient status
-      const gradientResponse = await getGradientStatus();
-      if (gradientResponse.success && gradientResponse.data) {
-        setGradientStatus(gradientResponse.data.status);
-      }
-      
       if (!isLoading) {
-        showSuccess('Dashboard Updated', 'Data refreshed successfully');
+        showSuccess("Dashboard Updated", "Data refreshed successfully");
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      showError('Failed to Load', 'Could not fetch dashboard data. Using demo mode.');
-      
-      // Set demo data as fallback
+      console.error("Failed to fetch dashboard data:", error);
+      showError(
+        "Failed to Load",
+        "Could not fetch dashboard data. Using demo mode.",
+      );
+
       setStats({
         totalRepositories: 0,
         totalSimulations: 0,
@@ -188,7 +138,7 @@ export function Dashboard() {
         averageRiskScore: 0,
         lastSimulation: null,
         aiPoweredScans: 0,
-        fallbackScans: 0
+        fallbackScans: 0,
       });
       setRecentSimulations([]);
     } finally {
@@ -202,8 +152,8 @@ export function Dashboard() {
   }, []);
 
   const getTimeAgo = (timestamp: string | null) => {
-    if (!timestamp) return 'Never';
-    
+    if (!timestamp) return "Never";
+
     const now = new Date();
     const then = new Date(timestamp);
     const diffMs = now.getTime() - then.getTime();
@@ -211,7 +161,7 @@ export function Dashboard() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
@@ -219,22 +169,39 @@ export function Dashboard() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
-      case 'critical': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'high': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-      case 'low': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      default: return 'text-gray-500 bg-gray-500/10 border-gray-500/20';
+      case "critical":
+        return "text-red-500 bg-red-500/10 border-red-500/20";
+      case "high":
+        return "text-orange-500 bg-orange-500/10 border-orange-500/20";
+      case "medium":
+        return "text-yellow-500 bg-yellow-500/10 border-yellow-500/20";
+      case "low":
+        return "text-blue-500 bg-blue-500/10 border-blue-500/20";
+      default:
+        return "text-gray-500 bg-gray-500/10 border-gray-500/20";
     }
   };
 
   const getSourceBadge = (source: string) => {
     switch (source) {
-      case 'gemini':
-        return { icon: '🤖', label: 'AI-Powered', color: 'text-green-500 bg-green-500/10' };
-      case 'fallback':
-        return { icon: '⚙️', label: 'Deterministic', color: 'text-yellow-500 bg-yellow-500/10' };
+      case "gemini":
+        return {
+          icon: "🤖",
+          label: "AI-Powered",
+          color: "text-green-500 bg-green-500/10",
+        };
+      case "fallback":
+        return {
+          icon: "⚙️",
+          label: "Deterministic",
+          color: "text-yellow-500 bg-yellow-500/10",
+        };
       default:
-        return { icon: '❓', label: 'Legacy', color: 'text-gray-500 bg-gray-500/10' };
+        return {
+          icon: "❓",
+          label: "Legacy",
+          color: "text-gray-500 bg-gray-500/10",
+        };
     }
   };
 
@@ -267,7 +234,9 @@ export function Dashboard() {
           variant="outline"
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -284,9 +253,13 @@ export function Dashboard() {
             <div className="p-2 bg-blue-500/10 rounded-lg">
               <GitBranch className="h-6 w-6 text-blue-500" />
             </div>
-            <span className="text-2xl font-bold">{stats?.totalRepositories || 0}</span>
+            <span className="text-2xl font-bold">
+              {stats?.totalRepositories || 0}
+            </span>
           </div>
-          <h3 className="text-sm font-medium text-muted-foreground">Repositories Analyzed</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Repositories Analyzed
+          </h3>
         </motion.div>
 
         {/* Total Simulations */}
@@ -300,9 +273,13 @@ export function Dashboard() {
             <div className="p-2 bg-purple-500/10 rounded-lg">
               <Activity className="h-6 w-6 text-purple-500" />
             </div>
-            <span className="text-2xl font-bold">{stats?.totalSimulations || 0}</span>
+            <span className="text-2xl font-bold">
+              {stats?.totalSimulations || 0}
+            </span>
           </div>
-          <h3 className="text-sm font-medium text-muted-foreground">Total Scans</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Total Scans
+          </h3>
         </motion.div>
 
         {/* Total Vulnerabilities */}
@@ -316,9 +293,13 @@ export function Dashboard() {
             <div className="p-2 bg-red-500/10 rounded-lg">
               <AlertTriangle className="h-6 w-6 text-red-500" />
             </div>
-            <span className="text-2xl font-bold">{stats?.totalVulnerabilities || 0}</span>
+            <span className="text-2xl font-bold">
+              {stats?.totalVulnerabilities || 0}
+            </span>
           </div>
-          <h3 className="text-sm font-medium text-muted-foreground">Total Vulnerabilities</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Total Vulnerabilities
+          </h3>
         </motion.div>
 
         {/* Average Risk Score */}
@@ -332,9 +313,13 @@ export function Dashboard() {
             <div className="p-2 bg-orange-500/10 rounded-lg">
               <TrendingUp className="h-6 w-6 text-orange-500" />
             </div>
-            <span className="text-2xl font-bold">{stats?.averageRiskScore || 0}/10</span>
+            <span className="text-2xl font-bold">
+              {stats?.averageRiskScore || 0}/10
+            </span>
           </div>
-          <h3 className="text-sm font-medium text-muted-foreground">Avg Risk Score</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Avg Risk Score
+          </h3>
         </motion.div>
       </div>
 
@@ -352,28 +337,36 @@ export function Dashboard() {
                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
                 <span className="text-sm">Critical</span>
               </div>
-              <span className="text-sm font-medium">{stats?.criticalVulnerabilities || 0}</span>
+              <span className="text-sm font-medium">
+                {stats?.criticalVulnerabilities || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-orange-500"></div>
                 <span className="text-sm">High</span>
               </div>
-              <span className="text-sm font-medium">{stats?.highVulnerabilities || 0}</span>
+              <span className="text-sm font-medium">
+                {stats?.highVulnerabilities || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                 <span className="text-sm">Medium</span>
               </div>
-              <span className="text-sm font-medium">{stats?.mediumVulnerabilities || 0}</span>
+              <span className="text-sm font-medium">
+                {stats?.mediumVulnerabilities || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                 <span className="text-sm">Low</span>
               </div>
-              <span className="text-sm font-medium">{stats?.lowVulnerabilities || 0}</span>
+              <span className="text-sm font-medium">
+                {stats?.lowVulnerabilities || 0}
+              </span>
             </div>
           </div>
         </div>
@@ -390,19 +383,25 @@ export function Dashboard() {
                 <span className="text-2xl">🤖</span>
                 <span className="text-sm font-medium">Gemini AI Scans</span>
               </div>
-              <span className="text-lg font-bold text-green-500">{stats?.aiPoweredScans || 0}</span>
+              <span className="text-lg font-bold text-green-500">
+                {stats?.aiPoweredScans || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-yellow-500/5 rounded-lg border border-yellow-500/20">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">⚙️</span>
                 <span className="text-sm font-medium">Fallback Scans</span>
               </div>
-              <span className="text-lg font-bold text-yellow-500">{stats?.fallbackScans || 0}</span>
+              <span className="text-lg font-bold text-yellow-500">
+                {stats?.fallbackScans || 0}
+              </span>
             </div>
             <div className="pt-2 border-t border-border/40">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Last Scan</span>
-                <span className="font-medium">{getTimeAgo(stats?.lastSimulation || null)}</span>
+                <span className="font-medium">
+                  {getTimeAgo(stats?.lastSimulation || null)}
+                </span>
               </div>
             </div>
           </div>
@@ -463,24 +462,32 @@ export function Dashboard() {
             </div>
             <h3 className="text-lg font-semibold">Gradient Cluster</h3>
           </div>
-          
+
           {gradientStatus ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status</span>
-                <span className={`flex items-center gap-2 ${gradientStatus.connected ? 'text-green-500' : 'text-red-500'}`}>
-                  <div className={`h-2 w-2 rounded-full ${gradientStatus.connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                  {gradientStatus.connected ? 'Connected' : 'Disconnected'}
+                <span
+                  className={`flex items-center gap-2 ${gradientStatus.connected ? "text-green-500" : "text-red-500"}`}
+                >
+                  <div
+                    className={`h-2 w-2 rounded-full ${gradientStatus.connected ? "bg-green-500" : "bg-red-500"} animate-pulse`}
+                  ></div>
+                  {gradientStatus.connected ? "Connected" : "Disconnected"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Mode</span>
-                <span className={`px-2 py-1 rounded text-xs ${gradientStatus.mock_mode ? 'bg-yellow-500/10 text-yellow-500' : 'bg-green-500/10 text-green-500'}`}>
-                  {gradientStatus.mock_mode ? 'Simulated' : 'Production'}
+                <span
+                  className={`px-2 py-1 rounded text-xs ${gradientStatus.mock_mode ? "bg-yellow-500/10 text-yellow-500" : "bg-green-500/10 text-green-500"}`}
+                >
+                  {gradientStatus.mock_mode ? "Simulated" : "Production"}
                 </span>
               </div>
               <div className="pt-3 border-t border-border/40">
-                <p className="text-xs text-muted-foreground">{gradientStatus.message}</p>
+                <p className="text-xs text-muted-foreground">
+                  {gradientStatus.message}
+                </p>
               </div>
               {gradientStatus.mock_mode && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
@@ -532,7 +539,9 @@ export function Dashboard() {
                       <div className="flex items-center gap-2 mb-1">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{sim.repo_id}</span>
-                        <span className={`px-2 py-0.5 rounded text-xs border ${getSeverityColor(sim.overall_severity)}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs border ${getSeverityColor(sim.overall_severity)}`}
+                        >
                           {sim.overall_severity.toUpperCase()}
                         </span>
                       </div>
@@ -542,7 +551,9 @@ export function Dashboard() {
                         <span>{getTimeAgo(sim.timestamp)}</span>
                       </div>
                     </div>
-                    <div className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 ${sourceBadge.color}`}>
+                    <div
+                      className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 ${sourceBadge.color}`}
+                    >
                       <span>{sourceBadge.icon}</span>
                       <span>{sourceBadge.label}</span>
                     </div>

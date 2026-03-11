@@ -54,20 +54,23 @@ interface TestResult {
 
 // ─── Recommended defaults per test type ──────────────────────────────────────
 
-const DEFAULTS: Record<string, { vus: number; duration: string; rampUp: string }> = {
-  load:     { vus: 1000, duration: "2m",  rampUp: "30s" },
-  stress:   { vus: 1000, duration: "2m",  rampUp: "5s"  },
-  spike:    { vus: 1000, duration: "2m",  rampUp: "2s"  },
-  capacity: { vus: 1000, duration: "30m", rampUp: "1s"  },
-  quick:    { vus: 100,  duration: "30s", rampUp: "5s"  },
+const DEFAULTS: Record<
+  string,
+  { vus: number; duration: string; rampUp: string }
+> = {
+  load: { vus: 1000, duration: "2m", rampUp: "30s" },
+  stress: { vus: 1000, duration: "2m", rampUp: "5s" },
+  spike: { vus: 1000, duration: "2m", rampUp: "2s" },
+  capacity: { vus: 1000, duration: "30m", rampUp: "1s" },
+  quick: { vus: 100, duration: "30s", rampUp: "5s" },
 };
 
 const TEST_LABELS: Record<string, string> = {
-  load:     "Load Test",
-  stress:   "Stress Test",
-  spike:    "Spike Test",
+  load: "Load Test",
+  stress: "Stress Test",
+  spike: "Spike Test",
   capacity: "Capacity Test",
-  quick:    "Quick Test",
+  quick: "Quick Test",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -103,17 +106,21 @@ function MetricCard({
   accent?: "green" | "red" | "blue" | "yellow" | "default";
 }) {
   const accentClass: Record<string, string> = {
-    green:   "text-emerald-400",
-    red:     "text-red-400",
-    blue:    "text-blue-400",
-    yellow:  "text-yellow-400",
+    green: "text-emerald-400",
+    red: "text-red-400",
+    blue: "text-blue-400",
+    yellow: "text-yellow-400",
     default: "text-foreground",
   };
 
   return (
     <div className="glass rounded-xl p-4 border border-border/40 flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
-      <span className={`text-xl font-bold ${accentClass[accent ?? "default"]}`}>{value}</span>
+      <span className="text-xs text-muted-foreground uppercase tracking-wider">
+        {label}
+      </span>
+      <span className={`text-xl font-bold ${accentClass[accent ?? "default"]}`}>
+        {value}
+      </span>
       {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
     </div>
   );
@@ -121,11 +128,19 @@ function MetricCard({
 
 // ─── Section Header ──────────────────────────────────────────────────────────
 
-function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+function SectionHeader({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ElementType;
+  title: string;
+}) {
   return (
     <div className="flex items-center gap-2 mb-3">
       <Icon className="h-4 w-4 text-primary" />
-      <span className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">{title}</span>
+      <span className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">
+        {title}
+      </span>
     </div>
   );
 }
@@ -142,7 +157,9 @@ export default function StartTestPage() {
     useDefaults: true,
   });
 
-  const [phase, setPhase] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [phase, setPhase] = useState<"idle" | "running" | "done" | "error">(
+    "idle",
+  );
   const [statusMsg, setStatusMsg] = useState("");
   const [result, setResult] = useState<TestResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -158,7 +175,9 @@ export default function StartTestPage() {
     setConfig((prev) => ({
       ...prev,
       testType: type,
-      ...(prev.useDefaults ? { vus: d.vus, duration: d.duration, rampUp: d.rampUp } : {}),
+      ...(prev.useDefaults
+        ? { vus: d.vus, duration: d.duration, rampUp: d.rampUp }
+        : {}),
     }));
   }
 
@@ -191,7 +210,7 @@ export default function StartTestPage() {
         setStatusMsg("Running quick performance test…");
         const res = await fetch(
           `http://localhost:8000/api/performance/test/quick?target_url=${encodeURIComponent(config.targetUrl)}`,
-          { method: "POST" }
+          { method: "POST" },
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -219,7 +238,9 @@ export default function StartTestPage() {
 
       // STEP 2 — fetch detailed metrics
       setStatusMsg("Fetching detailed metrics from database…");
-      const dbRes = await fetch(`http://localhost:8000/api/performance/db/run/${testId}`);
+      const dbRes = await fetch(
+        `http://localhost:8000/api/performance/db/run/${testId}`,
+      );
       if (!dbRes.ok) throw new Error(`DB fetch failed: HTTP ${dbRes.status}`);
       const metrics: TestResult = await dbRes.json();
 
@@ -228,7 +249,9 @@ export default function StartTestPage() {
       setStatusMsg("");
     } catch (err: unknown) {
       setPhase("error");
-      setErrorMsg(err instanceof Error ? err.message : "Unknown error occurred.");
+      setErrorMsg(
+        err instanceof Error ? err.message : "Unknown error occurred.",
+      );
     }
   }
 
@@ -268,16 +291,18 @@ export default function StartTestPage() {
               Load / <span className="gradient-text">Performance Testing</span>
             </h1>
             <p className="text-muted-foreground">
-              Configure your test, hit Start, and get live metrics from the backend.
+              Configure your test, hit Start, and get live metrics from the
+              backend.
             </p>
           </div>
 
           {/* ── Config Form ──────────────────────────────────────────────────── */}
           <div className="glass p-8 rounded-lg border border-border/40 space-y-6 mb-8">
-
             {/* Target URL */}
             <div>
-              <label className="block text-sm font-medium mb-2">Target URL</label>
+              <label className="block text-sm font-medium mb-2">
+                Target URL
+              </label>
               <input
                 type="url"
                 value={config.targetUrl}
@@ -290,7 +315,9 @@ export default function StartTestPage() {
 
             {/* Test Type */}
             <div>
-              <label className="block text-sm font-medium mb-2">Test Type</label>
+              <label className="block text-sm font-medium mb-2">
+                Test Type
+              </label>
               <div className="relative">
                 <select
                   value={config.testType}
@@ -299,7 +326,9 @@ export default function StartTestPage() {
                   className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-sm appearance-none pr-10"
                 >
                   {Object.entries(TEST_LABELS).map(([val, label]) => (
-                    <option key={val} value={val}>{label}</option>
+                    <option key={val} value={val}>
+                      {label}
+                    </option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -414,7 +443,9 @@ export default function StartTestPage() {
               >
                 <div className="flex items-center gap-3">
                   <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-                  <span className="text-sm text-blue-300 font-medium">{statusMsg}</span>
+                  <span className="text-sm text-blue-300 font-medium">
+                    {statusMsg}
+                  </span>
                 </div>
                 {/* Progress bar */}
                 <div className="w-full bg-border/40 rounded-full h-1.5 overflow-hidden">
@@ -445,16 +476,22 @@ export default function StartTestPage() {
                 <div className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-700/40 text-emerald-300 px-5 py-3 rounded-lg text-sm">
                   <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                   <div>
-                    <span className="font-semibold">Test completed successfully</span>
+                    <span className="font-semibold">
+                      Test completed successfully
+                    </span>
                     <span className="text-emerald-400/70 ml-2 text-xs">
-                      {TEST_LABELS[result.test_type]} · {result.duration} · {result.target_url}
+                      {TEST_LABELS[result.test_type]} · {result.duration} ·{" "}
+                      {result.target_url}
                     </span>
                   </div>
                 </div>
 
                 {/* ── Performance Summary ──────────────────────────────────── */}
                 <div className="glass p-6 rounded-lg border border-border/40">
-                  <SectionHeader icon={TrendingUp} title="Performance Summary" />
+                  <SectionHeader
+                    icon={TrendingUp}
+                    title="Performance Summary"
+                  />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <MetricCard
                       label="Total Requests"
@@ -474,12 +511,24 @@ export default function StartTestPage() {
                     <MetricCard
                       label="Success Rate"
                       value={`${result.success_rate.toFixed(2)}%`}
-                      accent={result.success_rate >= 99 ? "green" : result.success_rate >= 95 ? "yellow" : "red"}
+                      accent={
+                        result.success_rate >= 99
+                          ? "green"
+                          : result.success_rate >= 95
+                            ? "yellow"
+                            : "red"
+                      }
                     />
                     <MetricCard
                       label="Failure Rate"
                       value={`${result.failure_rate.toFixed(2)}%`}
-                      accent={result.failure_rate < 1 ? "green" : result.failure_rate < 5 ? "yellow" : "red"}
+                      accent={
+                        result.failure_rate < 1
+                          ? "green"
+                          : result.failure_rate < 5
+                            ? "yellow"
+                            : "red"
+                      }
                     />
                   </div>
                 </div>
@@ -488,23 +537,40 @@ export default function StartTestPage() {
                 <div className="glass p-6 rounded-lg border border-border/40">
                   <SectionHeader icon={Clock} title="Response Times" />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <MetricCard label="Avg Response" value={fmtMs(result.avg_response_time)} accent="blue" />
-                    <MetricCard label="P50 (Median)" value={fmtMs(result.p50_response_time)} />
+                    <MetricCard
+                      label="Avg Response"
+                      value={fmtMs(result.avg_response_time)}
+                      accent="blue"
+                    />
+                    <MetricCard
+                      label="P50 (Median)"
+                      value={fmtMs(result.p50_response_time)}
+                    />
                     <MetricCard
                       label="P95"
                       value={fmtMs(result.p95_response_time)}
-                      accent={result.p95_response_time > 5000 ? "yellow" : "default"}
+                      accent={
+                        result.p95_response_time > 5000 ? "yellow" : "default"
+                      }
                     />
                     <MetricCard
                       label="P99"
                       value={fmtMs(result.p99_response_time)}
-                      accent={result.p99_response_time > 10000 ? "red" : "default"}
+                      accent={
+                        result.p99_response_time > 10000 ? "red" : "default"
+                      }
                     />
-                    <MetricCard label="Min" value={fmtMs(result.min_response_time)} accent="green" />
+                    <MetricCard
+                      label="Min"
+                      value={fmtMs(result.min_response_time)}
+                      accent="green"
+                    />
                     <MetricCard
                       label="Max"
                       value={fmtMs(result.max_response_time)}
-                      accent={result.max_response_time > 30000 ? "red" : "yellow"}
+                      accent={
+                        result.max_response_time > 30000 ? "red" : "yellow"
+                      }
                     />
                   </div>
                 </div>
@@ -513,8 +579,15 @@ export default function StartTestPage() {
                 <div className="glass p-6 rounded-lg border border-border/40">
                   <SectionHeader icon={Users} title="Traffic" />
                   <div className="grid grid-cols-2 gap-3">
-                    <MetricCard label="Max VUs" value={fmtNum(result.vus_max)} accent="blue" />
-                    <MetricCard label="Average VUs" value={result.vus_avg.toFixed(1)} />
+                    <MetricCard
+                      label="Max VUs"
+                      value={fmtNum(result.vus_max)}
+                      accent="blue"
+                    />
+                    <MetricCard
+                      label="Average VUs"
+                      value={result.vus_avg.toFixed(1)}
+                    />
                   </div>
                 </div>
 
@@ -522,7 +595,10 @@ export default function StartTestPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => { setPhase("idle"); setResult(null); }}
+                  onClick={() => {
+                    setPhase("idle");
+                    setResult(null);
+                  }}
                 >
                   <Zap className="mr-2 h-4 w-4" />
                   Run Another Test
@@ -551,14 +627,16 @@ export default function StartTestPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => { setPhase("idle"); setErrorMsg(""); }}
+                  onClick={() => {
+                    setPhase("idle");
+                    setErrorMsg("");
+                  }}
                 >
                   Try Again
                 </Button>
               </motion.div>
             )}
           </AnimatePresence>
-
         </motion.div>
       </div>
     </div>

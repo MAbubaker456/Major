@@ -1,0 +1,49 @@
+{
+  "test_id": "perftest_20260309T194335_smoke_1f602dad",
+  "target_url": "https://zscareeracademy.gurully.com/",
+  "status": "completed",
+  "timestamp": "2026-03-09T19:45:36.976768Z",
+  "config": {
+    "test_type": "smoke",
+    "vus": 5,
+    "duration": "2m",
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/health"
+      }
+    ],
+    "headers": {},
+    "timeout": 180
+  },
+  "metrics": {
+    "requests": {
+      "total": 404,
+      "successful": 0,
+      "failed": 404,
+      "rate": 0,
+      "failed_rate": 100.0,
+      "success_rate": 0.0,
+      "status_codes": {}
+    },
+    "response_time": {
+      "avg": 115.31,
+      "min": 81.53,
+      "max": 196.24,
+      "p50": 117.18,
+      "p95": 135.29,
+      "p99": 152.2
+    },
+    "virtual_users": {
+      "max": 5,
+      "avg": 3.5
+    },
+    "checks": {
+      "passed": 0,
+      "failed": 404,
+      "pass_rate": 0.0
+    }
+  },
+  "k6_version": "k6.exe v1.3.0 (commit/5870e99ae8, go1.25.1, windows/amd64)",
+  "_mock": false
+}
