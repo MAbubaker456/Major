@@ -1,0 +1,50 @@
+{
+  "test_id": "perftest_20260311T104316_load_92817943",
+  "target_url": "https://takeuforward.org/dsa/strivers-a2z-sheet-learn-dsa-a-to-z",
+  "status": "completed",
+  "timestamp": "2026-03-11T10:46:48.375053Z",
+  "config": {
+    "test_type": "load",
+    "vus": 1000,
+    "duration": "2m",
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/dsa/strivers-a2z-sheet-learn-dsa-a-to-z"
+      }
+    ],
+    "headers": {},
+    "ramp_up": "30s",
+    "timeout": 300
+  },
+  "metrics": {
+    "requests": {
+      "total": 55984,
+      "successful": 0,
+      "failed": 55984,
+      "rate": 0,
+      "failed_rate": 100.0,
+      "success_rate": 0.0,
+      "status_codes": {}
+    },
+    "response_time": {
+      "avg": 1640.6,
+      "min": 67.1,
+      "max": 60000.96,
+      "p50": 772.65,
+      "p95": 4734.26,
+      "p99": 19006.82
+    },
+    "virtual_users": {
+      "max": 1000,
+      "avg": 700.0
+    },
+    "checks": {
+      "passed": 0,
+      "failed": 55984,
+      "pass_rate": 0.0
+    }
+  },
+  "k6_version": "k6.exe v1.3.0 (commit/5870e99ae8, go1.25.1, windows/amd64)",
+  "_mock": false
+}

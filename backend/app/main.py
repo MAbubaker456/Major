@@ -13,6 +13,7 @@ from backend.app.routers import ai, operations, performance
 from backend.app.services.gradient_service import init_gradient, run_gradient_task
 import os
 from backend.app.routers import code_assist
+from backend.app.routers import vulnscan
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ app.include_router(operations.router)
 app.include_router(ai.router)
 app.include_router(performance.router) 
 app.include_router(code_assist.router)
+app.include_router(vulnscan.router)
 
 
 @app.on_event("startup")
@@ -82,6 +84,9 @@ async def startup_event() -> None:
         logger.info("Code Assist service ready")
     except Exception as exc:
         logger.warning(f"Code Assist initialization skipped: {exc}")
+
+
+
 
 
 @app.get("/health")
