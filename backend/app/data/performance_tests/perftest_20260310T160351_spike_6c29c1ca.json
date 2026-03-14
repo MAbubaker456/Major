@@ -1,0 +1,52 @@
+{
+  "test_id": "perftest_20260310T160351_spike_6c29c1ca",
+  "target_url": "https://www.lordsautomation.com/Login.aspx",
+  "status": "completed",
+  "timestamp": "2026-03-10T16:18:38.146911Z",
+  "config": {
+    "test_type": "spike",
+    "vus": 1000,
+    "duration": "2m",
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/Login.aspx"
+      }
+    ],
+    "headers": {},
+    "timeout": 420
+  },
+  "metrics": {
+    "requests": {
+      "total": 9200,
+      "successful": 5418,
+      "failed": 3782,
+      "rate_per_second": 10.38,
+      "failed_rate": 41.11,
+      "success_rate": 58.89,
+      "status_codes": {
+        "200": 5418,
+        "0": 3782
+      }
+    },
+    "response_time": {
+      "avg": 248115.7,
+      "min": 1603.76,
+      "max": 603691.7,
+      "p50": 291426.86,
+      "p95": 578554.14,
+      "p99": 590919.58
+    },
+    "virtual_users": {
+      "max": 1000,
+      "avg": 700.0
+    },
+    "checks": {
+      "passed": 5418,
+      "failed": 3782,
+      "pass_rate": 58.89
+    }
+  },
+  "k6_version": "Pure Python async HTTP",
+  "_mock": false
+}
