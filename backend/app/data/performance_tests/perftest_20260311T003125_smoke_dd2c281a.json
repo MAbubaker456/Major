@@ -1,0 +1,51 @@
+{
+  "test_id": "perftest_20260311T003125_smoke_dd2c281a",
+  "target_url": "https://www.youtube.com",
+  "status": "completed",
+  "timestamp": "2026-03-11T00:33:35.454688Z",
+  "config": {
+    "test_type": "smoke",
+    "vus": 5,
+    "duration": "2m",
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/health"
+      }
+    ],
+    "headers": {},
+    "timeout": 180
+  },
+  "metrics": {
+    "requests": {
+      "total": 80,
+      "successful": 80,
+      "failed": 0,
+      "rate_per_second": 0.62,
+      "failed_rate": 0.0,
+      "success_rate": 100.0,
+      "status_codes": {
+        "200": 80
+      }
+    },
+    "response_time": {
+      "avg": 5961.39,
+      "min": 3648.77,
+      "max": 10457.53,
+      "p50": 5725.8,
+      "p95": 8680.56,
+      "p99": 10457.53
+    },
+    "virtual_users": {
+      "max": 5,
+      "avg": 3.5
+    },
+    "checks": {
+      "passed": 80,
+      "failed": 0,
+      "pass_rate": 100.0
+    }
+  },
+  "k6_version": "Pure Python async HTTP",
+  "_mock": false
+}
