@@ -1,4 +1,4 @@
-# 🛡️ CognitoForge AI
+# 🛡️ ThreatForge AI
 
 <div align="center">
 
