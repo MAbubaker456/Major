@@ -14,6 +14,7 @@ from backend.app.services.gradient_service import init_gradient, run_gradient_ta
 import os
 from backend.app.routers import code_assist
 from backend.app.routers import vulnscan
+from backend.app.routers import reports
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ app.include_router(ai.router)
 app.include_router(performance.router) 
 app.include_router(code_assist.router)
 app.include_router(vulnscan.router)
+app.include_router(reports.router)
 
 
 @app.on_event("startup")
