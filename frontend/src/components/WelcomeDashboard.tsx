@@ -1,41 +1,54 @@
-'use client';
+"use client";
 
-import { useAuth0 } from '@auth0/auth0-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, GitBranch, Clock, TrendingUp, AlertTriangle, CheckCircle, Play, FileText, Sparkles, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { GeminiPanel } from './GeminiPanel';
-import Link from 'next/link';
+import { useAuth0 } from "@auth0/auth0-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Shield,
+  GitBranch,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Play,
+  FileText,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { GeminiPanel } from "./GeminiPanel";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-
-export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => void }) {
+export function WelcomeDashboard({
+  onStartAnalysis,
+}: {
+  onStartAnalysis: () => void;
+}) {
   const { user } = useAuth0();
   const [showAIPanel, setShowAIPanel] = useState(false);
   const router = useRouter();
 
-
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.5 }
+    transition: { duration: 0.5 },
   };
 
   const staggerChildren = {
     animate: {
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   // Mock data - replace with real data from your backend
   const stats = {
     totalScans: 12,
     vulnerabilities: 3,
-    lastScan: '2 days ago',
-    riskScore: 7.5
+    lastScan: "2 days ago",
+    riskScore: 7.5,
   };
 
   return (
@@ -50,7 +63,7 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Welcome back, {user?.name?.split(' ')[0] || 'there'}! 👋
+              Welcome back, {user?.name?.split(" ")[0] || "there"}! 👋
             </h1>
             <p className="text-lg text-muted-foreground">
               Your security dashboard is ready. Let's analyze some code.
@@ -64,7 +77,7 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
             {user?.picture && (
               <img
                 src={user.picture}
-                alt={user.name || 'User'}
+                alt={user.name || "User"}
                 className="h-16 w-16 rounded-full border-2 border-primary shadow-lg"
               />
             )}
@@ -122,19 +135,23 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
 
       {/* Quick Actions */}
       <motion.div
-  variants={staggerChildren}
-  initial="initial"
-  animate="animate"
-  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
->
-
-        <div className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group" onClick={onStartAnalysis}>
+        variants={staggerChildren}
+        initial="initial"
+        animate="animate"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+      >
+        <div
+          className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group"
+          onClick={onStartAnalysis}
+        >
           <div className="flex items-start gap-4">
             <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
               <Play className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-2">New Security Scan</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                New Security Scan
+              </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 Start a comprehensive security analysis of your repository
               </p>
@@ -145,18 +162,22 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
           </div>
         </div>
 
-        <Link href="/dashboard" className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block">
-
+        <Link
+          href="/dashboard"
+          className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block"
+        >
           <div className="flex items-start gap-4">
             <div className="p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
               <Shield className="h-6 w-6 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-2">Security Dashboard</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                Security Dashboard
+              </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 view trends and insights across all your projects
               </p>
-              <Button size="sm" variant="purple" className="w-full" >
+              <Button size="sm" variant="purple" className="w-full">
                 Open Dashboard
               </Button>
             </div>
@@ -169,47 +190,63 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
               <FileText className="h-6 w-6 text-green-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-2">View Reports</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                View Reports
+              </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 Access your previous security analysis reports
               </p>
-              <Button size="sm" variant="purple" className="w-full">
-                View All Reports
+
+              <Button asChild size="sm" variant="purple" className="w-full">
+                <Link href="/reports">View All Reports</Link>
               </Button>
             </div>
           </div>
         </div>
 
-        <Link href="/startTest" className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block">
-
+        <Link
+          href="/startTest"
+          className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block"
+        >
           <div className="flex items-start gap-4">
             <div className="p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
               <Shield className="h-6 w-6 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-2">Performance Test</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                Performance Test
+              </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 View trends and insights across all your projects
               </p>
-              <Button size="sm" variant="outline" className="w-full" variant="purple">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                variant="purple"
+              >
                 Start Test
               </Button>
             </div>
           </div>
         </Link>
 
-        <Link href="/intrusionTest" className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block">
-
+        <Link
+          href="/intrusionTest"
+          className="glass p-6 rounded-lg border border-border/40 hover:border-primary/50 transition-colors cursor-pointer group block"
+        >
           <div className="flex items-start gap-4">
             <div className="p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
               <Shield className="h-6 w-6 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground mb-2">Intrusion Test</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                Intrusion Test
+              </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 testing a system for unauthorized access.
               </p>
-              <Button size="sm" variant="purple" className="w-full" >
+              <Button size="sm" variant="purple" className="w-full">
                 Intrusion Test
               </Button>
             </div>
@@ -218,29 +255,28 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
 
         {/* AI Security Analyst Card - NEW! */}
         <motion.div
-  variants={fadeIn}
-  className="glass p-6 rounded-lg border border-[#614334]/40 hover:border-[#614334]/70 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-[#614334]/20"
-  onClick={() => router.push("/assist")}
->
-  <div className="flex items-start gap-4">
-    <div className="p-3 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors">
-      <Sparkles className="h-6 w-6 text-purple-400 group-hover:animate-pulse" />
-    </div>
-    <div className="flex-1">
-      <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-        Code Assist
-      </h3>
-      <p className="text-sm text-muted-foreground mb-3">
-        Get AI-powered code assistance
-      </p>
-      <Button size="sm" variant="purple" className="w-full">
-        Assist
-      </Button>
-    </div>
-  </div>
-</motion.div>
-
-      </motion.div> 
+          variants={fadeIn}
+          className="glass p-6 rounded-lg border border-[#614334]/40 hover:border-[#614334]/70 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-[#614334]/20"
+          onClick={() => router.push("/assist")}
+        >
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors">
+              <Sparkles className="h-6 w-6 text-purple-400 group-hover:animate-pulse" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                Code Assist
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Get AI-powered code assistance
+              </p>
+              <Button size="sm" variant="purple" className="w-full">
+                Assist
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
 
       {/* Recent Activity */}
       {/*  <motion.div
@@ -310,7 +346,7 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
               onClick={() => setShowAIPanel(false)}
               className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40"
             />
-            
+
             {/* Panel */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -334,7 +370,7 @@ export function WelcomeDashboard({ onStartAnalysis }: { onStartAnalysis: () => v
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
+
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-6">
                 <GeminiPanel />
