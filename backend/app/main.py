@@ -33,6 +33,8 @@ allowed_origins = {
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:3002",
+    "https://major-drab.vercel.app",
+    "https://major-gi2s8fjth-murtuzamaazs-projects.vercel.app/",
 }
 if settings.auth0_domain:
     allowed_origins.add(settings.auth0_domain.rstrip("/"))

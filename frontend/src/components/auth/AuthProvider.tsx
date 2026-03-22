@@ -36,8 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Auth0 configuration - using environment variables for security
   const domain =
-    process.env.NEXT_PUBLIC_AUTH0_DOMAIN ||
-    "https://dev-wcii3qy64cqx6v0w.us.auth0.com";
+    process.env.NEXT_PUBLIC_AUTH0_DOMAIN || "dev-wcii3qy64cqx6v0w.us.auth0.com";
   const clientId =
     process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID ||
     "48hZTEbnBvboITcdUE5tcJ8OnH3mVgya";
@@ -48,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!domain || !clientId) {
     console.error(
-      "Auth0 credentials missing. Please check your environment variables."
+      "Auth0 credentials missing. Please check your environment variables.",
     );
     return <>{children}</>;
   }
