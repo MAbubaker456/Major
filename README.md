@@ -48,6 +48,27 @@
 - 📈 **Real-Time Dashboard**: Live analytics and visualization of security metrics
 
 ---
+---
+
+## 👨‍💻 Team
+
+| Name                          | Roll Number   |
+|-------------------------------|---------------|
+| Mohammed Murtuzauddin Maaz    | 160922748011  |
+| Mohammed Abubaker             | 160922748044  |
+| Anas Athat Mohiuddin          | 160922748024  |
+
+
+**Project Guide:**  
+Mr.Srikanth Reddy Madi, Assistant Professor  
+
+**Co-Guide / HoD:**  
+Dr. Abdul Rasool MD, Associate Professor & Head of Department, CSE (AIML)  
+
+**Institution:**  
+Lords Institute of Engineering and Technology, Hyderabad  
+
+---
 
 ## ✨ Features
 
