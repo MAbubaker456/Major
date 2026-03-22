@@ -95,7 +95,7 @@ void main(){gl_Position=position;}`;
         0,
         0,
         this.canvas.width * scale,
-        this.canvas.height * scale
+        this.canvas.height * scale,
       );
     }
 
@@ -126,7 +126,10 @@ void main(){gl_Position=position;}`;
 
     reset() {
       const gl = this.gl;
-      if (this.program && !gl.getProgramParameter(this.program, gl.DELETE_STATUS)) {
+      if (
+        this.program &&
+        !gl.getProgramParameter(this.program, gl.DELETE_STATUS)
+      ) {
         if (this.vs) {
           gl.detachShader(this.program, this.vs);
           gl.deleteShader(this.vs);
@@ -163,7 +166,7 @@ void main(){gl_Position=position;}`;
       gl.bufferData(
         gl.ARRAY_BUFFER,
         new Float32Array(this.vertices),
-        gl.STATIC_DRAW
+        gl.STATIC_DRAW,
       );
 
       const position = gl.getAttribLocation(program, "position");
@@ -172,14 +175,14 @@ void main(){gl_Position=position;}`;
 
       (program as any).resolution = gl.getUniformLocation(
         program,
-        "resolution"
+        "resolution",
       );
       (program as any).time = gl.getUniformLocation(program, "time");
       (program as any).move = gl.getUniformLocation(program, "move");
       (program as any).touch = gl.getUniformLocation(program, "touch");
       (program as any).pointerCount = gl.getUniformLocation(
         program,
-        "pointerCount"
+        "pointerCount",
       );
       (program as any).pointers = gl.getUniformLocation(program, "pointers");
     }
@@ -197,11 +200,15 @@ void main(){gl_Position=position;}`;
       gl.uniform2f(
         (program as any).resolution,
         this.canvas.width,
-        this.canvas.height
+        this.canvas.height,
       );
       gl.uniform1f((program as any).time, now * 1e-3);
-      gl.uniform2f((program as any).move, ...this.mouseMove);
-      gl.uniform2f((program as any).touch, ...this.mouseCoords);
+      gl.uniform2f((program as any).move, this.mouseMove[0], this.mouseMove[1]);
+      gl.uniform2f(
+        (program as any).touch,
+        this.mouseCoords[0],
+        this.mouseCoords[1],
+      );
       gl.uniform1i((program as any).pointerCount, this.nbrOfPointers);
       gl.uniform2fv((program as any).pointers, this.pointerCoords);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -223,14 +230,14 @@ void main(){gl_Position=position;}`;
         element: HTMLCanvasElement,
         scale: number,
         x: number,
-        y: number
+        y: number,
       ) => [x * scale, element.height - y * scale];
 
       element.addEventListener("pointerdown", (e) => {
         this.active = true;
         this.pointers.set(
           e.pointerId,
-          map(element, this.getScale(), e.clientX, e.clientY)
+          map(element, this.getScale(), e.clientX, e.clientY),
         );
       });
 
@@ -255,12 +262,9 @@ void main(){gl_Position=position;}`;
         this.lastCoords = [e.clientX, e.clientY];
         this.pointers.set(
           e.pointerId,
-          map(element, this.getScale(), e.clientX, e.clientY)
+          map(element, this.getScale(), e.clientX, e.clientY),
         );
-        this.moves = [
-          this.moves[0] + e.movementX,
-          this.moves[1] + e.movementY,
-        ];
+        this.moves = [this.moves[0] + e.movementX, this.moves[1] + e.movementY];
       });
     }
 
@@ -361,7 +365,9 @@ const Hero: React.FC<HeroProps> = ({
   const canvasRef = useShaderBackground();
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden bg-black ${className}`}>
+    <div
+      className={`relative w-full h-screen overflow-hidden bg-black ${className}`}
+    >
       <style jsx>{`
         @keyframes fade-in-down {
           from {
@@ -425,8 +431,8 @@ const Hero: React.FC<HeroProps> = ({
                         index === 0
                           ? "text-yellow-300"
                           : index === 1
-                          ? "text-orange-300"
-                          : "text-amber-300"
+                            ? "text-orange-300"
+                            : "text-amber-300"
                       }`}
                     >
                       {icon}
