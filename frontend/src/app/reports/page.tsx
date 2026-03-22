@@ -99,6 +99,7 @@ interface IntrusionReport {
   target_url: string;
   organization: string;
   scan_type: string;
+  status?: string;
   risk_score: number;
   severity_summary: Record<string, number>;
   priority_findings: IntrusionFinding[];
@@ -384,7 +385,7 @@ function buildIntrusionPDF(r: IntrusionReport) {
 <h1>🎯 Intrusion Test Report</h1>
 <p class="meta"><b>Target:</b> ${r.target_url}</p>
 <p class="meta"><b>Organization:</b> ${r.organization ?? "—"}</p>
-<p class="meta"><b>Scan Type:</b> ${r.scan_type} · <b>Status:</b> ${(r as Record<string, unknown>).status ?? "—"}</p>
+<p class="meta"><b>Scan Type:</b> ${r.scan_type} · <b>Status:</b> ${r.status ?? "—"}</p>
 <p class="meta"><b>Modules run:</b> ${(r.modules_run ?? []).join(", ") || "—"}</p>
 <p class="meta"><b>Completed:</b> ${r.completed_at ?? "—"}</p>
 
