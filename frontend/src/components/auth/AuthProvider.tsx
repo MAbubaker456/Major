@@ -43,7 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const audience =
     process.env.NEXT_PUBLIC_AUTH0_AUDIENCE || "https://major-api";
   const redirectUri =
-    typeof window !== "undefined" ? window.location.origin : "";
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/auth/callback`
+      : "";
 
   if (!domain || !clientId) {
     console.error(
