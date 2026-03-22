@@ -56,7 +56,7 @@
 |-------------------------------|---------------|
 | Mohammed Murtuzauddin Maaz    | 160922748011  |
 | Mohammed Abubaker             | 160922748044  |
-| Anas Athat Mohiuddin          | 160922748024  |
+| Anas Athar Mohiuddin          | 160922748024  |
 
 
 **Project Guide:**  
