@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const HeroBackground = () => {
   return (
@@ -18,7 +18,6 @@ const HeroBackground = () => {
     </>
   );
 };
-
 
 const Hero2 = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -195,4 +194,4 @@ function MobileNavItem({ label }: { label: string }) {
   );
 }
 
-export { Hero2 , HeroBackground };
+export { Hero2, HeroBackground };
