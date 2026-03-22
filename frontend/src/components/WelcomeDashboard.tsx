@@ -219,12 +219,7 @@ export function WelcomeDashboard({
               <p className="text-sm text-muted-foreground mb-3">
                 View trends and insights across all your projects
               </p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                variant="purple"
-              >
+              <Button size="sm" variant="purple" className="w-full">
                 Start Test
               </Button>
             </div>
